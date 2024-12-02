@@ -22,8 +22,10 @@ def result(face_a_base64, face_b_base64):
 @app.route('/verify', methods=['POST'])
 def verify():
     data = request.get_json()
+    print(data["face_a"][:3])
+    print(data["face_b"][:3])
     verdict = result(data['face_a'], data['face_b']) 
     return jsonify(verdict)
 
 if __name__ == '__main__':
-    app.run(port=PORT, debug=True)
+    app.run(host='0.0.0.0', port=PORT, debug=True)
