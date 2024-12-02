@@ -1,0 +1,5 @@
+flask
+RPi.GPIO
+pyserial
+picamera
+base64
