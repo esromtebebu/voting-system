@@ -33,7 +33,7 @@ const newElection = async (req, res, next) => {
         'Creating new election failed, please try again.',
         500
       );
-      throw next(error);
+      return res.status(error.code).json({ message: error.message});
     };
   
     res.status(201).json({election: newCampaign.toObject({ getters: true })});
@@ -48,7 +48,7 @@ const getAllElections = async (req, res, next) => {
         'Fetching elections failed, please try again later.',
         500
       );
-      throw next(error);
+      return res.status(error.code).json({ message: error.message});
     }
     res.json({elections: elections.map(election => election.toObject({ getters: true }))});
 }
@@ -63,7 +63,7 @@ const findById = async (req, res, next) => {
         'Fetching election failed, please try again later.',
         500
       );
-      throw next(error);
+      return res.status(error.code).json({ message: error.message});
     }
     res.status(200).json({election: election.toObject({ getters: true })});
 }
@@ -95,7 +95,7 @@ const modifyElection = async (req, res, next) => {
         'Updating election failed, please try again.',
         500
       );
-      throw next(error);
+      return res.status(error.code).json({ message: error.message});
     };
   
     res.status(201).json({election: updatedCampaign.toObject({ getters: true })});
@@ -128,7 +128,7 @@ const addCandidate = async (req, res, next) => {
       'Adding new candidate failed, please try again.',
       500
     );
-    throw next(error);
+    return res.status(error.code).json({ message: error.message});
   };
 
   res.status(201).json({candidate: addedCandidate});
@@ -145,7 +145,7 @@ const addVote = async (req, res, next) => {
       'Adding new candidate failed, please try again.',
       500
     );
-    throw next(error);
+    return res.status(error.code).json({ message: error.message});
   };
 
   res.status(201).json({newVote: addedVote});

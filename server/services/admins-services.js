@@ -17,9 +17,9 @@ const newAdmin = async (adminObject) => {
     }
 }
 
-const findAdminById = async (adminRFID) => {
+const findOneByRFID = async (adminRFID) => {
     try {
-        const admin = await Admins.findOne(adminRFID);
+        const admin = await Admins.findOne({adminRFID: adminRFID});
         console.log("Successfully found admin.");
         return admin;
     } catch (err) {
@@ -30,9 +30,16 @@ const findAdminById = async (adminRFID) => {
 const updateAdmin = async (adminRFID, updatedAdminData) => {
     try {
         const updatedAdmin = await Admins.findOneAndUpdate(
-            adminRFID,
-            updatedAdminData,
-            { new: true }
+            {adminRFID},
+            {$set: {
+                adminName: {
+                    adminFirstName: updatedAdminData.adminName.adminFirstName,
+                    adminLastName: updatedAdminData.adminName.adminLastName
+                },
+                adminRFID: updatedAdminData.newAdminRFID,
+                adminDOB: updatedAdminData.adminDOB,
+                adminImage: updatedAdminData.adminImage
+            }}
         );
         console.log("Successfully updated admin.");
         return updatedAdmin;
@@ -55,12 +62,10 @@ const deleteAdmin = async (adminRFID) => {
 
 const scanAdminRFID = async () => {
     try {
-        const raspiRFID = await fetch(`http://${raspiIP}:5000/scan`)
-                                    .then(response => response.json())
-                                    .then(data => console.log(data))
-                                    .catch(error => console.error(error));
+        let raspiRFID = await fetch(`http://${raspiIP}:5000/scan`);
+        raspiRFID = await raspiRFID.json();
         console.log("Successfully scanned RFID.");
-        return raspiRFID;
+        return raspiRFID["RFID"];
     } catch (err) {
         console.error(err);
         throw new Error(err);
@@ -69,12 +74,10 @@ const scanAdminRFID = async () => {
 
 const takeAdminImage = async () => {
     try {
-        const raspiImage = await fetch(`http://${raspiIP}:5000/capture`)
-                                    .then(response => response.json())
-                                    .then(data => console.log(data))
-                                    .catch(error => console.error(error));
+        let raspiImage = await fetch(`http://${raspiIP}:5000/capture`);
+        raspiImage = await raspiImage.json();
         console.log("Successfully captured image.");
-        return raspiImage;
+        return raspiImage["Face"];
     } catch (err) {
         console.error(err);
         throw new Error(err);
@@ -83,11 +86,11 @@ const takeAdminImage = async () => {
 
 const verifyFace = async (adminRFID, newImage) => {
     try {
-        const adminImage = Admins.findOne(
+        const adminImage = await Admins.findOne( 
             { adminRFID: adminRFID},
             { adminImage: 1}
         );
-        const results = await fetch(
+        let results = await fetch(
                                         `${face_recognition_server}`, 
                                         {
                                             method: 'POST',
@@ -95,20 +98,18 @@ const verifyFace = async (adminRFID, newImage) => {
                                             'Content-Type': 'application/json'
                                             },
                                             body: JSON.stringify({
-                                            face_a: newImage,
-                                            face_b: adminImage
+                                                face_a: newImage,
+                                                face_b: adminImage.adminImage
                                             })
-                                    }
-                                    )
-                                        .then(response => response.json())
-                                        .then(data => console.log(data)) 
-                                        .catch(error => console.error(error))
-                                    ;
-        return results;
+                                        }
+                                    );
+        results = await results.json();
+        console.log("Facial verification run successfully.");
+        return results["verified"];
     } catch (err) {
         console.error(err);
         throw new Error(err);
     }
 }
 
-module.exports = { newAdmin, findAdminById, updateAdmin, deleteAdmin, scanAdminRFID, takeAdminImage, verifyFace };
+module.exports = { newAdmin, findOneByRFID, updateAdmin, deleteAdmin, scanAdminRFID, takeAdminImage, verifyFace };

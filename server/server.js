@@ -6,7 +6,7 @@ dotenv.config();
 
 const votersRoutes = require('./routes/voters-routes');
 const electionsRoutes = require('./routes/elections-routes');
-// const adminsRoutes = require('./routes/admins-routes');
+const adminsRoutes = require('./routes/admins-routes');
 const HttpError = require('./models/http-error');
 
 const app = express();
@@ -15,7 +15,7 @@ app.use(bodyParser.json());
 
 app.use('/api/voters', votersRoutes);
 app.use('/api/elections', electionsRoutes);
-// app.use('/api/admin', adminsRoutes);
+app.use('/api/admin', adminsRoutes);
 
 app.use((req, res, next) => {
   const error = new HttpError('Could not find this route.', 404);
@@ -24,7 +24,7 @@ app.use((req, res, next) => {
 
 app.use((error, req, res, next) => {
   if (res.headerSent) {
-    throw next(error);
+    return res.status(error.code).json({ message: error.message});
   }
   res.status(error.code || 500);
   res.json({ message: error.message || 'An unknown error occurred!' });

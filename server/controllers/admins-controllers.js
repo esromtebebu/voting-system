@@ -17,10 +17,10 @@ const createAdmin = async (req, res, next) => {
         adminLastName: adminLastName
     };
     const createdAdmin = new Admins({
-        adminName,
-        adminRFID,
-        adminImage,
-        adminDOB
+        adminName: adminName,
+        adminRFID: adminRFID,
+        adminImage: adminImage,
+        adminDOB: adminDOB 
     });
     let newAdministrator;
     try {
@@ -30,7 +30,7 @@ const createAdmin = async (req, res, next) => {
           'Signing up failed, please try again.',
           500
         );
-        throw next(error);
+        return res.status(error.code).json({ message: error.message});
       };
     
       res.status(201).json({user: newAdministrator.toObject({ getters: true })});
@@ -51,9 +51,9 @@ const modifyAdmin = async (req, res, next) => {
     };
 
     const updatedAdmin = new Admins({
-        adminName,
-        adminRFID,
-        adminDOB
+        adminName: adminName,
+        adminRFID: newAdminRFID,
+        adminDOB: adminDOB
     });
     let updatedAdministrator;
     try {
@@ -63,7 +63,7 @@ const modifyAdmin = async (req, res, next) => {
           'Update failed, please try again.',
           500
         );
-        throw next(error);
+        return res.status(error.code).json({ message: error.message});
     };
     
       res.status(201).json({"Admin": updatedAdministrator.toObject({ getters: true })});
@@ -79,7 +79,7 @@ const getAdminRFID = async (req, res, next) => {
           'Getting RFID failed, please try again.',
           500
         );
-        throw next(error);
+        return res.status(error.code).json({ message: error.message});
       };
       res.status(200).json({"AdminRFID": raspiRFID});
 }
@@ -93,7 +93,7 @@ const getAdminImage = async (req, res, next) => {
           'Getting Image failed, please try again.',
           500
         );
-        throw next(error);
+        return res.status(error.code).json({ message: error.message});
       };
       res.status(200).json({"AdminImage": raspiImage});
 }
@@ -102,13 +102,13 @@ const getAdminById = async (req, res, next) => {
     const adminRFID = await req.params.adminRFID;
     let admin;
     try {
-        admin = await adminsServices.findAdminById(adminRFID);
+        admin = await adminsServices.findOneByRFID(adminRFID);
     } catch (err) {
         const error = new HttpError(
           'Getting admin failed, please try again.',
           500
         );
-        throw next(error);
+        return res.status(error.code).json({ message: error.message});
       };
       res.status(200).json({"Admin": admin});
 }
@@ -123,14 +123,14 @@ const removeAdmin = async (req, res, next) => {
           'Deleting admin failed, please try again.',
           500
         );
-        throw next(error);
+        return res.status(error.code).json({ message: error.message});
       };
       res.status(200).json({"Message": "Deleted one admin. account."});
 }
 
 const checkAdminIdentityByImage = async (req, res, next) => {
     const adminRFID = await req.params.adminRFID;
-    const newImage = await getAdminImage();
+    const newImage = await adminsServices.takeAdminImage();
     let result;
     try {
         result = await adminsServices.verifyFace(adminRFID, newImage);
@@ -139,33 +139,42 @@ const checkAdminIdentityByImage = async (req, res, next) => {
           'Face recognition of admin failed, please try again.',
           500
         );
-        throw next(error);
+        return res.status(error.code).json({ message: error.message});
       };
-      res.status(200).json({result});
+      res.status(200).json({"Verdict": result});
 }
 
 const login = async (req, res, next) => {
-  const { adminRFID, adminDOB } = await req.body;
+  let { adminRFID, adminDOB } = await req.body;
+  adminDOB = new Date(adminDOB + 'T00:00:00.000+00:00');
   let existingAdmin;
   try {
-    existingAdmin = await adminsServices.findAdminById(adminRFID);
+    existingAdmin = await adminsServices.findOneByRFID(adminRFID);
   } catch (err) {
     const error = new HttpError(
-      'Logging in failed, please try again later.',
+      'Logging in failed, please try again later.' + err,
       500
     );
-    throw next(error);
-  };
+    return res.status(error.code).json({ message: error.message});
+  }
 
-  if (!existingAdmin || existingAdmin.adminDOB !== adminDOB || existingAdmin.adminRFID !== adminRFID) {
+  if (!existingAdmin) {
     const error = new HttpError(
-      'Invalid credentials or admin. does not exist, could not log you in.',
+      'Admin not found, please check your credentials.',
+      401
+    ); 
+    return res.status(error.code).json({ message: error.message});
+  }
+
+  if (existingAdmin.adminDOB.getTime() !== adminDOB.getTime() || existingAdmin.adminRFID !== adminRFID) {
+    const error = new HttpError(
+      'Invalid credentials or admin does not exist, could not log you in.',
       401
     );
-    throw next(error);
-  };
+    return res.status(error.code).json({ message: error.message});
+  }
 
-  res.status(200).json({message: 'Logged in!'});
-}
+  res.status(200).json({ message: 'Logged in!' });
+};
 
 module.exports = { createAdmin, modifyAdmin, getAdminRFID, getAdminImage, getAdminById, removeAdmin, checkAdminIdentityByImage, login };

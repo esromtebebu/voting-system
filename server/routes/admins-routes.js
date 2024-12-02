@@ -5,7 +5,12 @@ const adminsControllers = require('../controllers/admins-controllers');
 
 const router = express.Router();
 
-router.get('/', adminsControllers.getadmins);
-router.get('/scan', adminsControllers.getadminRFID);
-
+router.post('/create', adminsControllers.createAdmin);
+router.patch('/:adminRFID/update', adminsControllers.modifyAdmin);
+router.get('/rfid', adminsControllers.getAdminRFID);
+router.get('/image', adminsControllers.getAdminImage);
+router.delete('/:adminRFID/delete', adminsControllers.removeAdmin);
+router.get('/:adminRFID', adminsControllers.getAdminById);
+router.post('/:adminRFID/verify', adminsControllers.checkAdminIdentityByImage);
+router.post('/login', adminsControllers.login);
 module.exports = router;
