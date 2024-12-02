@@ -3,10 +3,10 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const Voters = require('../models/voters');
-const raspiIP = dotenv.RASPIIP;
+const raspiIP = process.env.RASPIIP;
 const face_recognition_server = process.env.FACE_RECOGNIZER;
 
-export const newVoter = async (voterObject) => {
+const newVoter = async (voterObject) => {
     try {
         const voter = new Voters(voterObject);
         console.log("Successfully created new voter.");
@@ -17,12 +17,19 @@ export const newVoter = async (voterObject) => {
     }
 }
 
-export const updateVoter = async (voterRFID, updatedVoterData) => {
+const updateVoter = async (voterRFID, updatedVoterData) => {
     try {
         const updatedVoter = await Voters.findOneAndUpdate(
-            voterRFID,
-            updatedVoterData,
-            { new: true }
+            {voterRFID},
+            {$set: {
+                voterName: {
+                    voterFirstName: updatedVoterData.voterName.voterFirstName,
+                    voterLastName: updatedVoterData.voterName.voterLastName
+                },
+                voterRFID: updatedVoterData.newVoterRFID,
+                voterDOB: updatedVoterData.voterDOB,
+                voterImage: updatedVoterData.voterImage
+            }}
         );
         console.log("Successfully updated voter.");
         return updatedVoter;
@@ -32,7 +39,7 @@ export const updateVoter = async (voterRFID, updatedVoterData) => {
     }
 }
 
-export const registerVoter = async (voterRFID, electionId) => {
+const registerVoter = async (voterRFID, electionId) => {
     try {
 
         const newElection = {
@@ -41,22 +48,22 @@ export const registerVoter = async (voterRFID, electionId) => {
         };
 
         console.log("Voter registered for new election.");
-        return await Voters.findOneAndUpdate({ voterRFID: voterRFID}, { $push: {elections: newElection}});
+        return await Voters.findOneAndUpdate({ voterRFID: voterRFID }, { $push: {elections: newElection}});
     } catch (err) {
         console.error(err);
         throw new Error(err);
     }
 }
 
-export const vote = async (voterRFID, electionId) => {
+const vote = async (voterRFID, electionId) => {
     try { 
         console.log("Voter voted successfully.");
         return await Voters.updateOne(
             { 
               voterRFID: voterRFID,
-              "elections.electionID": electionId
+              "elections.electionId": electionId
             },
-            { $set: { "elections.$.status": "voted" } }
+            { $set: { "elections.$.voterStatus": "voted" } }
         );
     } catch (err) {
         console.error(err);
@@ -64,60 +71,78 @@ export const vote = async (voterRFID, electionId) => {
     }
 }
 
-export const scanVoterRFID = async () => {
+const scanVoterRFID = async () => {
     try {
-        const raspiRFID = await fetch(`http://${raspiIP}:5000/scan`)
-                                    .then(response => response.json())
-                                    .then(data => console.log(data))
-                                    .catch(error => console.error(error));
-        console.log("Successfully scanned RFID.");
-        return raspiRFID;
+        let raspiRFID = await fetch(`http://${raspiIP}:5000/scan`);
+        raspiRFID = await raspiRFID.json();
+        console.log("Successfully scanned RFID.", raspiRFID);
+        return raspiRFID["RFID"];
     } catch (err) {
         console.error(err);
         throw new Error(err);
     }
 }
 
-export const verifyFace = async (voterRFID, newImage) => {
+const verifyFace = async (voterRFID, newImage) => {
     try {
-        const voterImage = Voters.findOne(
+        const voterImage = await Voters.findOne(
             { voterRFID: voterRFID},
             { voterImage: 1}
         );
-        const results = await fetch(
+        let results = await fetch(
                                         `${face_recognition_server}`, 
                                         {
-                                            method: 'POST',
+                                            method: 'POST', 
                                             headers: {
                                             'Content-Type': 'application/json'
                                             },
                                             body: JSON.stringify({
-                                            face_a: newImage,
-                                            face_b: voterImage
+                                                face_a: newImage,
+                                                face_b: voterImage.voterImage
                                             })
-                                    }
-                                    )
-                                        .then(response => response.json())
-                                        .then(data => console.log(data)) 
-                                        .catch(error => console.error(error))
-                                    ;
-        return results;
+                                        }
+                                    );
+        results = await results.json();
+        console.log("Facial verification run successfully.");
+        return results["verified"];
     } catch (err) {
         console.error(err);
         throw new Error(err);
     }
 }
 
-export const takeVoterImage = async () => {
+const takeVoterImage = async () => {
     try {
-        const raspiImage = await fetch(`http://${raspiIP}:5000/capture`)
-                                    .then(response => response.json())
-                                    .then(data => console.log(data))
-                                    .catch(error => console.error(error));
+        let raspiImage = await fetch(`http://${raspiIP}:5000/capture`);
+        raspiImage = await raspiImage.json();
         console.log("Successfully captured image.");
-        return raspiImage;
+        return raspiImage["Face"];
     } catch (err) {
         console.error(err);
         throw new Error(err);
     }
 }
+
+const signIn = async (voterRFID, voterDOB) => {
+    try {
+        const voter = await Voters.findOne({ voterRFID: voterRFID, voterDOB: voterDOB });
+        console.log("Successfully signed in.");
+        return voter;
+    } catch (err) {
+        console.error(err);
+        throw new Error(err);
+    }
+}
+
+const findOneByRFID = async (voterRFID) => {
+    try {
+        const voter = await Voters.findOne({ voterRFID: voterRFID });
+        console.log("Voter found.");
+        return voter;
+    } catch (err) {
+        console.error(err);
+        throw new Error(err);
+    }
+}
+
+module.exports = { newVoter, updateVoter, registerVoter, vote, scanVoterRFID, verifyFace, takeVoterImage, signIn, findOneByRFID };

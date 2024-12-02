@@ -6,7 +6,7 @@ const Admins = require('../models/admins');
 const raspiIP = process.env.RASPIIP;
 const face_recognition_server = process.env.FACE_RECOGNIZER;
 
-export const newAdmin = async (adminObject) => {
+const newAdmin = async (adminObject) => {
     try {
         const admin = new Admins(adminObject);
         console.log("Successfully created new admin.");
@@ -17,7 +17,7 @@ export const newAdmin = async (adminObject) => {
     }
 }
 
-export const findAdminById = async (adminRFID) => {
+const findAdminById = async (adminRFID) => {
     try {
         const admin = await Admins.findOne(adminRFID);
         console.log("Successfully found admin.");
@@ -27,7 +27,7 @@ export const findAdminById = async (adminRFID) => {
         throw new Error(err);
     }
 }
-export const updateAdmin = async (adminRFID, updatedAdminData) => {
+const updateAdmin = async (adminRFID, updatedAdminData) => {
     try {
         const updatedAdmin = await Admins.findOneAndUpdate(
             adminRFID,
@@ -42,7 +42,7 @@ export const updateAdmin = async (adminRFID, updatedAdminData) => {
     }
 }
 
-export const deleteAdmin = async (adminRFID) => {
+const deleteAdmin = async (adminRFID) => {
     try {
         const admin = await Admins.findOne(adminRFID);
         console.log("Successfully deleted admin.");
@@ -53,7 +53,7 @@ export const deleteAdmin = async (adminRFID) => {
     }
 }
 
-export const scanAdminRFID = async () => {
+const scanAdminRFID = async () => {
     try {
         const raspiRFID = await fetch(`http://${raspiIP}:5000/scan`)
                                     .then(response => response.json())
@@ -67,7 +67,7 @@ export const scanAdminRFID = async () => {
     }
 }
 
-export const takeAdminImage = async () => {
+const takeAdminImage = async () => {
     try {
         const raspiImage = await fetch(`http://${raspiIP}:5000/capture`)
                                     .then(response => response.json())
@@ -81,7 +81,7 @@ export const takeAdminImage = async () => {
     }
 }
 
-export const verifyFace = async (adminRFID, newImage) => {
+const verifyFace = async (adminRFID, newImage) => {
     try {
         const adminImage = Admins.findOne(
             { adminRFID: adminRFID},
@@ -110,3 +110,5 @@ export const verifyFace = async (adminRFID, newImage) => {
         throw new Error(err);
     }
 }
+
+module.exports = { newAdmin, findAdminById, updateAdmin, deleteAdmin, scanAdminRFID, takeAdminImage, verifyFace };

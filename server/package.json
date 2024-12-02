@@ -18,7 +18,6 @@
     "express-validator": "^7.2.0",
     "lit-server": "file:",
     "mongodb": "^6.10.0",
-    "mongoose": "^8.8.2"
-  },
-  "type": "module"
+    "mongoose": "^8.8.3"
+  }
 }

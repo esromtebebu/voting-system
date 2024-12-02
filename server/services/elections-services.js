@@ -1,6 +1,6 @@
 const Elections = require('../models/elections');
 
-export const getElectionById = async (electionId) => {
+const getElectionById = async (electionId) => {
     try {
         const election = await Elections.findOne(electionId);
         return election;
@@ -10,7 +10,7 @@ export const getElectionById = async (electionId) => {
     }
 }
 
-export const getElections = async () => {
+const getElections = async () => {
     try {
         const elections = await Elections.find();
         return elections;
@@ -20,7 +20,7 @@ export const getElections = async () => {
     }
 }
 
-export const createElection = async (electionObject) => {
+const createElection = async (electionObject) => {
     try {
         const newElection = new Elections(electionObject);
         return await newElection.save();
@@ -30,7 +30,7 @@ export const createElection = async (electionObject) => {
     }
 }
 
-export const updateElection = async (electionId, updatedElectionData) => {
+const updateElection = async (electionId, updatedElectionData) => {
     try {
         const updatedElection = await Elections.findOneAndUpdate(
             electionId,
@@ -45,7 +45,7 @@ export const updateElection = async (electionId, updatedElectionData) => {
     }
 }
 
-export const newVote = async (electionId, candidateId) => {
+const newVote = async (electionId, candidateId) => {
     try {
         const updatedElection = await Elections.findOneAndUpdate(
             { 
@@ -62,7 +62,7 @@ export const newVote = async (electionId, candidateId) => {
     }
 }
 
-export const newCandidate = async (electionId, candidateObject) => {
+const newCandidate = async (electionId, candidateObject) => {
     try {
         const candidate = {
             candidateId: candidateObject.candidateId,
@@ -79,9 +79,10 @@ export const newCandidate = async (electionId, candidateObject) => {
             party: candidateObject.party,
             votes: 0
         }
-        const addedCandidate = await Elections.findByIdAndUpdate(
-            {electionId: electionId},
-            {$push: {candidates: candidate}}
+        const addedCandidate = await Elections.findOneAndUpdate(
+            { electionId: electionId },
+            { $push: {candidates: candidate }},
+            { new: true }
         );
         console.log("Successfully added a new candidate.")
         return addedCandidate;
@@ -90,3 +91,5 @@ export const newCandidate = async (electionId, candidateObject) => {
         throw new Error(err);
     }
 }
+
+module.exports = { getElectionById, getElections, createElection, updateElection, newVote, newCandidate };

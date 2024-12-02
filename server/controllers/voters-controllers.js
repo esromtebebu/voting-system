@@ -7,13 +7,13 @@ const HttpError = require('../models/http-error');
 const Voters = require('../models/voters');
 const votersServices = require('../services/voters-services');
 
-export const createVoter = async (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return next(
-      new HttpError('Invalid inputs passed, please check your data.', 422)
-    );
-  };
+const createVoter = async (req, res, next) => {
+  // const errors = validationResult(req);
+  // if (!errors.isEmpty()) {
+  //   return next(
+  //     new HttpError('Invalid inputs passed, please check your data.', 422)
+  //   );
+  // };
   const { voterFirstName, voterLastName, voterRFID, voterDOB, voterImage } = await req.body;
   const voterName = {
       voterFirstName: voterFirstName,
@@ -21,11 +21,11 @@ export const createVoter = async (req, res, next) => {
   };
   const elections = [];
   const createdVoter = new Voters({
-      voterName,
-      voterRFID,
-      voterDOB,
-      voterImage,
-      elections
+      voterName: voterName,
+      voterRFID: voterRFID,
+      voterDOB: voterDOB,
+      voterImage: voterImage,
+      elections: elections
   });
 
   let newElector;
@@ -42,27 +42,29 @@ export const createVoter = async (req, res, next) => {
     res.status(201).json({user: newElector.toObject({ getters: true })});
 }
 
-export const modifyVoter = async (req, res, next) => {
+const modifyVoter = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return next(
       new HttpError('Invalid inputs passed, please check your data.', 422)
     );
   };
-  const { voterFirstName, voterLastName, voterRFID, voterDOB } = await req.body;
+  const voterRFID = await req.params.voterRFID;
+  const { voterFirstName, voterLastName, newVoterRFID, voterDOB, voterImage } = await req.body;
   const voterName = {
       voterFirstName: voterFirstName,
       voterLastName: voterLastName
   };
 
   const updatedVoter = new Voters({
-      voterName,
-      voterRFID,
-      voterDOB
+      voterName: voterName,
+      voterRFID: newVoterRFID,
+      voterDOB: voterDOB,
+      voterImage: voterImage
   });
   let updatedElector;
   try {
-    updatedElector = await votersServices.updateVoter(updatedVoter);
+    updatedElector = await votersServices.updateVoter(voterRFID, updatedVoter);
   } catch (err) {
       const error = new HttpError(
         'Update failed, please try again.',
@@ -74,7 +76,7 @@ export const modifyVoter = async (req, res, next) => {
     res.status(201).json({"Voter": updatedElector.toObject({ getters: true })});
 }
 
-export const registerToVote = async (req, res, next) => {
+const registerToVote = async (req, res, next) => {
   const voterRFID = await req.params.voterRFID;
   const electionId = await req.body.electionId;
   let newElection;
@@ -90,7 +92,7 @@ export const registerToVote = async (req, res, next) => {
   res.status(201).json({"Election": newElection});
 }
 
-export const castVote = async (req, res, next) => {
+const castVote = async (req, res, next) => {
   const voterRFID = await req.params.voterRFID;
   const electionId = await req.body.electionId;
   let election;
@@ -106,7 +108,7 @@ export const castVote = async (req, res, next) => {
   res.status(201).json({"Election": election});
 }
 
-export const getVoterRFID = async (req, res, next) => {
+const getVoterRFID = async (req, res, next) => {
   let raspiRFID;
   try {
       raspiRFID = await votersServices.scanVoterRFID();
@@ -121,7 +123,7 @@ export const getVoterRFID = async (req, res, next) => {
     res.status(200).json({"VoterRFID": raspiRFID});
 }
 
-export const getVoterImage = async (req, res, next) => {
+const getVoterImage = async (req, res, next) => {
   let raspiImage;
   try {
       raspiImage = await votersServices.takeVoterImage();
@@ -135,9 +137,9 @@ export const getVoterImage = async (req, res, next) => {
     res.status(200).json({"VoterImage": raspiImage});
 }
 
-export const checkVoterIdentityByImage = async (req, res, next) => {
+const checkVoterIdentityByImage = async (req, res, next) => {
   const voterRFID = await req.params.voterRFID;
-  const newImage = await getVoterImage();
+  const newImage = await votersServices.takeVoterImage();
   let result;
   try {
       result = await votersServices.verifyFace(voterRFID, newImage);
@@ -148,29 +150,43 @@ export const checkVoterIdentityByImage = async (req, res, next) => {
       );
       throw next(error);
     };
-    res.status(200).json({result});
+    res.status(201).json({"Verdict": result});
 }
 
-export const login = async (req, res, next) => {
-  const { voterRFID, voterDOB } = await req.body;
+const login = async (req, res, next) => {
+  let voterDOB = await req.body.voterDOB;
+  voterDOB = new Date(voterDOB + 'T00:00:00.000+00:00');
   let existingVoter;
+  let voterRFID;
   try {
-    existingVoter = await votersServices.findVoterById(voterRFID);
+    voterRFID = await votersServices.scanVoterRFID();
+    existingVoter = await votersServices.findOneByRFID(voterRFID);
   } catch (err) {
     const error = new HttpError(
       'Logging in failed, please try again later.',
       500
     );
     throw next(error);
-  };
+  }
 
-  if (!existingVoter || existingVoter.voterDOB !== voterDOB || existingVoter.voterRFID !== voterRFID) {
+  if (!existingVoter) {
     const error = new HttpError(
-      'Invalid credentials or voter. does not exist, could not log you in.',
+      'Voter not found, please check your credentials.',
       401
     );
     throw next(error);
-  };
+  }
 
-  res.status(200).json({message: 'Logged in!'});
-}
+  if (existingVoter.voterDOB.getDate() !== voterDOB.getDate() || existingVoter.voterRFID !== voterRFID) {
+    const error = new HttpError(
+      'Invalid credentials or voter does not exist, could not log you in.',
+      401
+    );
+    throw next(error);
+  }
+
+  res.status(200).json({ message: 'Logged in!' });
+};
+
+
+module.exports = { createVoter, modifyVoter, registerToVote, castVote, getVoterRFID, getVoterImage, checkVoterIdentityByImage, login };

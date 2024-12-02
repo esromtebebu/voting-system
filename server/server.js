@@ -6,15 +6,16 @@ dotenv.config();
 
 const votersRoutes = require('./routes/voters-routes');
 const electionsRoutes = require('./routes/elections-routes');
-const adminsRoutes = require('./routes/admins-routes');
+// const adminsRoutes = require('./routes/admins-routes');
 const HttpError = require('./models/http-error');
 
 const app = express();
+app.use(express.json({ limit: '50mb' }));
 app.use(bodyParser.json());
 
 app.use('/api/voters', votersRoutes);
 app.use('/api/elections', electionsRoutes);
-app.use('/api/admin', adminsRoutes);
+// app.use('/api/admin', adminsRoutes);
 
 app.use((req, res, next) => {
   const error = new HttpError('Could not find this route.', 404);

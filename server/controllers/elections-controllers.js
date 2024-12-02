@@ -4,14 +4,14 @@ const HttpError = require('../models/http-error');
 const Elections = require('../models/elections');
 const electionsServices = require('../services/elections-services');
 
-export const newElection = async (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return next(
-      new HttpError('Invalid inputs passed, please check your data.', 422)
-    );
-  };
-  const { name, registrationStart, registrationEnd, votingStart, votingEnd } = await req.body;
+const newElection = async (req, res, next) => {
+  // const errors = validationResult(req);
+  // if (!errors.isEmpty()) {
+  //   return next(
+  //     new HttpError('Invalid inputs passed, please check your data.', 422)
+  //   );
+  // };
+  const { name, electionId, registrationStart, registrationEnd, votingStart, votingEnd } = await req.body;
   const electionDates = {
     registrationStart: registrationStart,
     registrationEnd: registrationEnd,
@@ -20,9 +20,10 @@ export const newElection = async (req, res, next) => {
   };
   const candidates = [];
   const createdElection = new Elections({
-    name,
-    candidates,
-    electionDates
+    name: name,
+    electionId: electionId,
+    candidates: candidates,
+    electionDates: electionDates
   });
   let newCampaign;
   try {
@@ -38,7 +39,7 @@ export const newElection = async (req, res, next) => {
     res.status(201).json({election: newCampaign.toObject({ getters: true })});
 }
 
-export const getAllElections = async (req, res, next) => {
+const getAllElections = async (req, res, next) => {
     let elections;
     try {
       elections = await electionsServices.getElections();
@@ -52,7 +53,7 @@ export const getAllElections = async (req, res, next) => {
     res.json({elections: elections.map(election => election.toObject({ getters: true }))});
 }
 
-export const findById = async (req, res, next) => {
+const findById = async (req, res, next) => {
     const {electionId} = await req.params.electionId;
     let election;
     try {
@@ -64,10 +65,10 @@ export const findById = async (req, res, next) => {
       );
       throw next(error);
     }
-    res.json({election: election.toObject({ getters: true })});
+    res.status(200).json({election: election.toObject({ getters: true })});
 }
 
-export const modifyElection = async (req, res, next) => {
+const modifyElection = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return next(
@@ -100,9 +101,9 @@ export const modifyElection = async (req, res, next) => {
     res.status(201).json({election: updatedCampaign.toObject({ getters: true })});
 }
 
-export const addCandidate = async (req, res, next) => {
+const addCandidate = async (req, res, next) => {
   const electionId = await req.params.electionId;
-  const { primaryCandidateFirstName, primaryCandidateLastName, primaryCandidateRole, secondaryCandidateFirstName, secondaryCandidateLastName, secondaryCandidateRole, party } = await req.body;
+  const { candidateId, primaryCandidateFirstName, primaryCandidateLastName, primaryCandidateRole, secondaryCandidateFirstName, secondaryCandidateLastName, secondaryCandidateRole, party } = await req.body;
   const primaryCandidate = {
     primaryCandidateFirstName: primaryCandidateFirstName,
     primaryCandidateLastName: primaryCandidateLastName,
@@ -114,6 +115,7 @@ export const addCandidate = async (req, res, next) => {
       secondaryCandidateRole: secondaryCandidateRole
   };
   const candidate = {
+    candidateId: candidateId,
     primaryCandidate: primaryCandidate,
     secondaryCandidate: secondaryCandidate,
     party: party
@@ -132,7 +134,7 @@ export const addCandidate = async (req, res, next) => {
   res.status(201).json({candidate: addedCandidate});
 }
 
-export const addVote = async (req, res, next) => {
+const addVote = async (req, res, next) => {
   const electionId = await req.params.electionId;
   const candidateId = await req.body.candidateId;
   let addedVote;
@@ -148,3 +150,5 @@ export const addVote = async (req, res, next) => {
 
   res.status(201).json({newVote: addedVote});
 }
+
+module.exports = { newElection, getAllElections, findById, modifyElection, addCandidate, addVote };

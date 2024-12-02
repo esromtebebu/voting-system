@@ -4,7 +4,7 @@ const HttpError = require('../models/http-error');
 const Admins = require('../models/admins');
 const adminsServices= require('../services/admins-services');
 
-export const createAdmin = async (req, res, next) => {
+const createAdmin = async (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return next(
@@ -36,7 +36,7 @@ export const createAdmin = async (req, res, next) => {
       res.status(201).json({user: newAdministrator.toObject({ getters: true })});
 }
 
-export const modifyAdmin = async (req, res, next) => {
+const modifyAdmin = async (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return next(
@@ -69,7 +69,7 @@ export const modifyAdmin = async (req, res, next) => {
       res.status(201).json({"Admin": updatedAdministrator.toObject({ getters: true })});
 }
 
-export const getAdminRFID = async (req, res, next) => {
+const getAdminRFID = async (req, res, next) => {
     let raspiRFID;
     try {
         raspiRFID = await adminsServices.scanAdminRFID();
@@ -84,7 +84,7 @@ export const getAdminRFID = async (req, res, next) => {
       res.status(200).json({"AdminRFID": raspiRFID});
 }
 
-export const getAdminImage = async (req, res, next) => {
+const getAdminImage = async (req, res, next) => {
     let raspiImage;
     try {
         raspiImage = await adminsServices.takeAdminImage();
@@ -98,7 +98,7 @@ export const getAdminImage = async (req, res, next) => {
       res.status(200).json({"AdminImage": raspiImage});
 }
 
-export const getAdminById = async (req, res, next) => {
+const getAdminById = async (req, res, next) => {
     const adminRFID = await req.params.adminRFID;
     let admin;
     try {
@@ -113,7 +113,7 @@ export const getAdminById = async (req, res, next) => {
       res.status(200).json({"Admin": admin});
 }
 
-export const removeAdmin = async (req, res, next) => {
+const removeAdmin = async (req, res, next) => {
     const adminRFID = await req.params.adminRFID;
     let removedAdmin;
     try {
@@ -128,7 +128,7 @@ export const removeAdmin = async (req, res, next) => {
       res.status(200).json({"Message": "Deleted one admin. account."});
 }
 
-export const checkAdminIdentityByImage = async (req, res, next) => {
+const checkAdminIdentityByImage = async (req, res, next) => {
     const adminRFID = await req.params.adminRFID;
     const newImage = await getAdminImage();
     let result;
@@ -144,7 +144,7 @@ export const checkAdminIdentityByImage = async (req, res, next) => {
       res.status(200).json({result});
 }
 
-export const login = async (req, res, next) => {
+const login = async (req, res, next) => {
   const { adminRFID, adminDOB } = await req.body;
   let existingAdmin;
   try {
@@ -167,3 +167,5 @@ export const login = async (req, res, next) => {
 
   res.status(200).json({message: 'Logged in!'});
 }
+
+module.exports = { createAdmin, modifyAdmin, getAdminRFID, getAdminImage, getAdminById, removeAdmin, checkAdminIdentityByImage, login };

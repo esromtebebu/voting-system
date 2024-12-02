@@ -5,10 +5,10 @@ const Schema = mongoose.Schema;
 
 const electionSchema = new Schema({
     name: { type: String, required: true },
-    electionId: { type: ObjectId, required: true },
+    electionId: { type: String, required: true },
     candidates: [
         {   
-            candidateId: { type: ObjectId, required: true },
+            candidateId: { type: String, required: true },
             primaryCandidate: {
                 primaryCandidateFirstName: { type: String, required: true },
                 primaryCandidateLastName: { type: String, required: true },
