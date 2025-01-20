@@ -50,7 +50,7 @@ const getAllElections = async (req, res, next) => {
       );
       return res.status(error.code).json({ message: error.message});
     }
-    res.json({elections: elections.map(election => election.toObject({ getters: true }))});
+    res.json(elections.map(election => election.toObject({ getters: true })));
 }
 
 const findById = async (req, res, next) => {
@@ -65,7 +65,7 @@ const findById = async (req, res, next) => {
       );
       return res.status(error.code).json({ message: error.message});
     }
-    res.status(200).json({election: election.toObject({ getters: true })});
+    res.status(200).json({election});
 }
 
 const modifyElection = async (req, res, next) => {

@@ -12,7 +12,7 @@ const getElectionById = async (electionId) => {
 
 const getElections = async () => {
     try {
-        const elections = await Elections.find();
+        const elections = await Elections.find({}, {_id: 0, _v: 0, "candidates._id": 0, "candidates.id": 0, id: 0});
         return elections;
     } catch (err) {
         console.error(err);

@@ -14,10 +14,15 @@ def result(face_a_base64, face_b_base64):
     face_b = base64.b64decode(face_b_base64)
     save_image(face_a, 'face_a')
     save_image(face_b, 'face_b')
-    return DeepFace.verify(
-        img1_path='face_a.jpg',
-        img2_path='face_b.jpg'
-    )
+    results = { "verified": False};
+    try:
+        results = DeepFace.verify(
+            img1_path='face_a.jpg',
+            img2_path='face_b.jpg'
+        )
+    except Exception as err:
+        print(f"Error: {err}")
+    return results
 
 @app.route('/verify', methods=['POST'])
 def verify():
